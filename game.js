@@ -3,10 +3,13 @@
     var canvas = document.getElementById(canvasId);
     var screen = canvas.getContext('2d');
     var gameSize = { x: canvas.width, y: canvas.height };
+    this.bodies = [];
 
-    this.bodies = createInvaders(this).concat(new Player(this, gameSize));
+    this.bodies = this.bodies.concat(createInvaders(this));
+    this.bodies = this.bodies.concat(new Player(this, gameSize));
 
     var self = this;
+
     var tick = function() {
       self.update();
       self.draw(screen, gameSize);
@@ -30,6 +33,7 @@
         this.bodies[i].update();
       }
     },
+
     draw: function(screen, gameSize) {
       screen.clearRect(0, 0, gameSize.x, gameSize.y);
       for (var i = 0; i < this.bodies.length; i++) {
@@ -39,6 +43,14 @@
 
     addBody: function(body) {
       this.bodies.push(body);
+    },
+
+    invadersBelow: function(invader) {
+      return this.bodies.filter(function(b) {
+        return b instanceof Invader &&
+          Math.abs(invader.center.x - b.center.x) < b.size.x &&
+          b.center.y > invader.center.y;
+      }).length > 0;
     }
   };
 
@@ -91,11 +103,16 @@
   Invader.prototype = {
     update: function() {
       if (this.patrolX < 0 || this.patrolX > 40) {
-        this.speedX = -this.speedXl
+        this.speedX = -this.speedX;
       }
 
       this.center.x += this.speedX;
       this.patrolX += this.speedX;
+
+      if (Math.random() > 0.995 && !this.game.invadersBelow(this)) {
+        var bullet = new Bullet({ x: this.center.x, y: this.center.y + this.size.x / 2}, { x: Math.random() - 0.5, y: 2 });
+        this.game.addBody(bullet);
+      }
     }
   };
 
